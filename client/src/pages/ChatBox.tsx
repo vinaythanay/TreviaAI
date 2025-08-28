@@ -54,7 +54,7 @@ export default function ChatBox() {
     }
     try {
       const { data } = await axios.post(
-        "/api/chat/new",
+        "/api/chat/create",
         {},
         { headers: { authorization: token || "" } }
       );

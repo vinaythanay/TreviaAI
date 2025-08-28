@@ -67,7 +67,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   async function createNewChat() {
     try {
-      const { data } = await axios.get('/api/chat/create', { headers: { authorization: token || '' } });
+      const { data } = await axios.post('/api/chat/create', {}, { headers: { authorization: token || '' } });
       if (data.success) {
         setChats(prev => [data.chat, ...prev]); // add new chat on top
         setSelectedChat(data.chat);  

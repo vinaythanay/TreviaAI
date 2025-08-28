@@ -3,8 +3,8 @@ import { useApp } from '../context/AppContext';
 import toast from 'react-hot-toast';
 
 export default function Sidebar() {
-  const { user, token, setToken, chats, setChats, selectedChat, setSelectedChat,  fetchUsersChats } = useApp();
-  const nav = useNavigate();
+  const { user, token, setToken, chats, setChats, selectedChat, setSelectedChat, fetchUsersChats, axios } = useApp();
+  const nav = useNavigate();
 
   function logout() {
     localStorage.removeItem('token');
@@ -13,42 +13,41 @@ export default function Sidebar() {
     nav('/login');
   }
    async function createNewChat() {
-  const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/chat/create`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", authorization: token || "" },
-  });
-
-  console.log("Raw response:", res);
-
-    const data = await res.json();
-
-    console.log("Create chat response:", data);
- // 👈 check this in console
-
-  if (data.success) {
-    const newChat = data.chat;
-    setChats((prev) => [newChat, ...prev]);
-    setSelectedChat(newChat);
-    nav(`/chat/${newChat.id}`);
-  } else {
-    toast.error(data.message);
+    try {
+      const { data } = await axios.post('/api/chat/create', {}, { headers: { authorization: token || '' } });
+      if (data.success) {
+        const newChat = data.chat;
+        setChats((prev) => [newChat, ...prev]);
+        setSelectedChat(newChat);
+        nav(`/chat/${newChat.id}`);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (e: any) {
+      toast.error(e.message);
+    }
   }
-}
 
 
 
-  async function deleteChat(e:React.MouseEvent, chatId:string) {
-    e.stopPropagation();
-    // Using a custom modal is better than confirm() for an iframe environment.
-    if (!confirm('Delete this chat?')) return;
-    const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/chat/delete`, {
-      method: 'POST', headers: { 'Content-Type':'application/json', authorization: token || '' },
-      body: JSON.stringify({ chatId })
-    });
-    const data = await res.json();
-    if (data.success) { setChats(prev => prev.filter(c => c.id !== chatId)); if (selectedChat?.id === chatId) setSelectedChat(null); await fetchUsersChats(); toast.success(data.message); }
-    else toast.error(data.message);
-  }
+    async function deleteChat(e:React.MouseEvent, chatId:string) {
+    e.stopPropagation();
+    // Using a custom modal is better than confirm() for an iframe environment.
+    if (!confirm('Delete this chat?')) return;
+    try {
+      const { data } = await axios.post('/api/chat/delete', { chatId }, { headers: { authorization: token || '' } });
+      if (data.success) { 
+        setChats(prev => prev.filter(c => c.id !== chatId)); 
+        if (selectedChat?.id === chatId) setSelectedChat(null); 
+        await fetchUsersChats(); 
+        toast.success(data.message); 
+      } else {
+        toast.error(data.message);
+      }
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  }
 
   return (
     <aside className="h-screen w-[280px] bg-slate-900/60 backdrop-blur p-4 border-r border-slate-800">
